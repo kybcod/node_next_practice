@@ -49,7 +49,7 @@ export default function BoardPage() {
   return (
     <div className="p-8 max-w-4xl mx-auto font-sans">
       <div className="flex justify-between items-center mb-8">
-        <h1 className="text-3xl font-bold text-white-800">나의 게시판</h1>
+        <h1 className="text-3xl font-bold text-white">나의 게시판</h1>
         {/* 글쓰기 모달 열기 버튼 */}
         <button
           onClick={() => setIsModalOpen(true)}
