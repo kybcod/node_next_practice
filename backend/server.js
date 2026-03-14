@@ -69,11 +69,6 @@ app.post('/api/posts', async (req, res) => {
 });
 
 
-
-
-
-
-
 app.listen(8080, () => {
-    console.log("백엔드 서버가 8080번 포트에서 실행 중")
+    console.log("백엔드 서버가 8080번 포트에서 실행 중~~")
 })
