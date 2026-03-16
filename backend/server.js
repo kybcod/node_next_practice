@@ -115,6 +115,22 @@ app.put('/api/posts/:id', async (req, res) => {
     }
 });
 
+app.delete('/api/posts/:id', async (req, res) => {
+    try {
+        const { id } = req.params;
+        const query = `DELETE FROM board_posts WHERE id = $1`;
+        const result = await pool.query(query, [id]);
+
+        if (result.rowCount === 0) {
+            return res.status(404).json({ message: "게시글을 찾을 수 없습니다." });
+        }
+
+        res.json({ message: "게시글이 삭제되었습니다." });
+    }catch (err) {
+        console.error(err);
+        res.status(500).json({ message: "게시글 삭제 실패", error: err.message });
+    }
+});
 
 app.listen(8080, () => {
     console.log("백엔드 서버가 8080번 포트에서 실행 중~~")
