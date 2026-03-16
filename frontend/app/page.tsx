@@ -17,6 +17,7 @@ export default function BoardPage() {
   const [selectedPost, setSelectedPost] = useState<any>(null);
   const [isDetailLoading, setIsDetailLoading] = useState(false);
   const [isEditMode, setIsEditMode] = useState(false);
+  const [isDelteMode, setIsDeleteMode] = useState(false);
   const [editTitle, setEditTitle] = useState("");
   const [editContent, setEditContent] = useState("");
   const [isSavingEdit, setIsSavingEdit] = useState(false);
@@ -83,6 +84,23 @@ export default function BoardPage() {
       closeDetailModal();
     } finally {
       setIsDetailLoading(false);
+    }
+  };
+
+  const saveDelete = async () => {
+    if (!selectedPost?.id) return;
+    try {
+      const res = await fetch(`/api/posts/${selectedPost.id}`, {
+        method: "DELETE",
+      });
+      if (!res.ok) throw new Error("삭제 실패");
+      alert("삭제되었습니다!");
+      closeDetailModal();
+      fetchPosts();
+      setIsDeleteMode(false);
+    }
+    catch (e) {
+      alert("삭제에 실패했습니다.");
     }
   };
 
@@ -323,6 +341,13 @@ export default function BoardPage() {
                         className="bg-gray-800 text-white px-6 py-2 rounded-lg font-bold hover:bg-black"
                       >
                         수정
+                      </button>
+                      <button
+                        type="button"
+                        onClick={saveDelete}
+                        className="bg-red-800 text-white px-6 py-2 rounded-lg font-bold hover:bg-black"
+                      >
+                        삭제
                       </button>
                     </div>
                   </>
