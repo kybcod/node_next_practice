@@ -16,6 +16,10 @@ export default function BoardPage() {
   const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
   const [selectedPost, setSelectedPost] = useState<any>(null);
   const [isDetailLoading, setIsDetailLoading] = useState(false);
+  const [isEditMode, setIsEditMode] = useState(false);
+  const [editTitle, setEditTitle] = useState("");
+  const [editContent, setEditContent] = useState("");
+  const [isSavingEdit, setIsSavingEdit] = useState(false);
 
   // 2. 백엔드에서 데이터를 가져오는 함수 (가져와서 바구니에 담기)
   const fetchPosts = async () => {
@@ -54,12 +58,20 @@ export default function BoardPage() {
     setIsDetailModalOpen(false);
     setSelectedPost(null);
     setIsDetailLoading(false);
+    setIsEditMode(false);
+    setEditTitle("");
+    setEditContent("");
+    setIsSavingEdit(false);
   };
 
   const openDetailModal = async (postId: number) => {
     setIsDetailModalOpen(true);
     setIsDetailLoading(true);
     setSelectedPost(null);
+    setIsEditMode(false);
+    setEditTitle("");
+    setEditContent("");
+    setIsSavingEdit(false);
 
     try {
       const res = await fetch(`/api/posts/${postId}`);
@@ -71,6 +83,46 @@ export default function BoardPage() {
       closeDetailModal();
     } finally {
       setIsDetailLoading(false);
+    }
+  };
+
+  const startEdit = () => {
+    if (!selectedPost) return;
+    setIsEditMode(true);
+    setEditTitle(selectedPost.title ?? "");
+    setEditContent(selectedPost.content ?? "");
+  };
+
+  const cancelEdit = () => {
+    setIsEditMode(false);
+    setEditTitle("");
+    setEditContent("");
+    setIsSavingEdit(false);
+  };
+
+  const saveEdit = async () => {
+    if (!selectedPost?.id) return;
+    if (!editTitle || !editContent) return alert("제목과 내용을 입력해주세요!");
+
+    setIsSavingEdit(true);
+    try {
+      const res = await fetch(`/api/posts/${selectedPost.id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ title: editTitle, content: editContent }),
+      });
+      if (!res.ok) throw new Error("수정 실패");
+      const updated = await res.json();
+      setSelectedPost(updated);
+      setIsEditMode(false);
+      setEditTitle("");
+      setEditContent("");
+      fetchPosts();
+      alert("수정되었습니다!");
+    } catch (e) {
+      alert("수정에 실패했습니다.");
+    } finally {
+      setIsSavingEdit(false);
     }
   };
 
@@ -206,7 +258,7 @@ export default function BoardPage() {
           >
             <div className="flex items-start justify-between gap-4 mb-4">
               <h2 className="text-2xl font-bold text-gray-800">
-                {isDetailLoading ? "불러오는 중..." : (selectedPost?.title ?? "게시글")}
+                {isDetailLoading ? "불러오는 중..." : (isEditMode ? "게시글 수정" : (selectedPost?.title ?? "게시글"))}
               </h2>
               <button
                 type="button"
@@ -224,9 +276,57 @@ export default function BoardPage() {
                 <div className="text-sm text-gray-400 mb-4">
                   {selectedPost?.created_at ? new Date(selectedPost.created_at).toLocaleString() : ""}
                 </div>
-                <div className="text-gray-700 whitespace-pre-wrap">
-                  {selectedPost?.content ?? ""}
-                </div>
+                {isEditMode ? (
+                  <>
+                    <input
+                      className="w-full border p-3 rounded-lg mb-4 text-black focus:ring-2 focus:ring-blue-400 outline-none"
+                      placeholder="제목을 입력하세요"
+                      value={editTitle}
+                      onChange={(e) => setEditTitle(e.target.value)}
+                      disabled={isSavingEdit}
+                    />
+                    <textarea
+                      className="w-full border p-3 rounded-lg mb-6 text-black h-40 focus:ring-2 focus:ring-blue-400 outline-none"
+                      placeholder="내용을 입력하세요"
+                      value={editContent}
+                      onChange={(e) => setEditContent(e.target.value)}
+                      disabled={isSavingEdit}
+                    />
+                    <div className="flex justify-end gap-3">
+                      <button
+                        type="button"
+                        onClick={cancelEdit}
+                        disabled={isSavingEdit}
+                        className="px-5 py-2 text-gray-500 hover:text-gray-700 font-medium disabled:opacity-50"
+                      >
+                        취소
+                      </button>
+                      <button
+                        type="button"
+                        onClick={saveEdit}
+                        disabled={isSavingEdit}
+                        className="bg-blue-600 text-white px-6 py-2 rounded-lg font-bold hover:bg-blue-700 disabled:opacity-50"
+                      >
+                        {isSavingEdit ? "저장 중..." : "저장"}
+                      </button>
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    <div className="text-gray-700 whitespace-pre-wrap mb-6">
+                      {selectedPost?.content ?? ""}
+                    </div>
+                    <div className="flex justify-end gap-3">
+                      <button
+                        type="button"
+                        onClick={startEdit}
+                        className="bg-gray-800 text-white px-6 py-2 rounded-lg font-bold hover:bg-black"
+                      >
+                        수정
+                      </button>
+                    </div>
+                  </>
+                )}
               </>
             )}
           </div>

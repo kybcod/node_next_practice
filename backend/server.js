@@ -87,6 +87,34 @@ app.get('/api/posts/:id', async (req, res) => {
     }
 });
 
+app.put('/api/posts/:id', async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { title, content } = req.body;
+
+        if (!title || !content) {
+            return res.status(400).json({ message: "제목과 내용을 입력해주세요." });
+        }
+
+        const query = `
+            UPDATE board_posts
+            SET title = $1, content = $2
+            WHERE id = $3
+            RETURNING *
+        `;
+        const result = await pool.query(query, [title, content, id]);
+
+        if (result.rowCount === 0) {
+            return res.status(404).json({ message: "게시글을 찾을 수 없습니다." });
+        }
+
+        res.json(result.rows[0]);
+    }catch (err) {
+        console.error(err);
+        res.status(500).json({ message: "게시글 수정 실패", error: err.message });
+    }
+});
+
 
 app.listen(8080, () => {
     console.log("백엔드 서버가 8080번 포트에서 실행 중~~")
