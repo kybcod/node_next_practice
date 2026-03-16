@@ -12,6 +12,11 @@ export default function BoardPage() {
   const [title, setTitle] = useState("");
   const [content, setContent] = useState("");
 
+  // 상세 모달 상태
+  const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
+  const [selectedPost, setSelectedPost] = useState<any>(null);
+  const [isDetailLoading, setIsDetailLoading] = useState(false);
+
   // 2. 백엔드에서 데이터를 가져오는 함수 (가져와서 바구니에 담기)
   const fetchPosts = async () => {
     const res = await fetch(`/api/posts?page=${page}&search=${search}`);
@@ -44,6 +49,30 @@ export default function BoardPage() {
     setContent("");
     setIsModalOpen(false);
   }
+
+  const closeDetailModal = () => {
+    setIsDetailModalOpen(false);
+    setSelectedPost(null);
+    setIsDetailLoading(false);
+  };
+
+  const openDetailModal = async (postId: number) => {
+    setIsDetailModalOpen(true);
+    setIsDetailLoading(true);
+    setSelectedPost(null);
+
+    try {
+      const res = await fetch(`/api/posts/${postId}`);
+      if (!res.ok) throw new Error("상세 조회 실패");
+      const result = await res.json();
+      setSelectedPost(result);
+    } catch (e) {
+      alert("게시글 상세를 불러오지 못했습니다.");
+      closeDetailModal();
+    } finally {
+      setIsDetailLoading(false);
+    }
+  };
 
   // 4. 화면에 어떻게 보여줄지 그리기 (HTML이랑 비슷해요)
   return (
@@ -78,10 +107,15 @@ export default function BoardPage() {
       {/* 게시글 목록 */}
       <div className="space-y-4">
         {data.posts && data.posts.map((post: any) => (
-          <div key={post.id} className="p-5 border border-gray-200 rounded-xl hover:shadow-md transition">
+          <button
+            key={post.id}
+            type="button"
+            onClick={() => openDetailModal(post.id)}
+            className="w-full text-left p-5 border border-gray-200 rounded-xl hover:shadow-md transition bg-transparent"
+          >
             <h3 className="font-bold text-xl text-blue-600 mb-1">{post.title}</h3>
-            <p className="text-gray-600">{post.content}</p>
-          </div>
+            <p className="text-gray-600 line-clamp-2">{post.content}</p>
+          </button>
         ))}
       </div>
 
@@ -152,6 +186,49 @@ export default function BoardPage() {
                 등록하기
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* 상세 모달 (isDetailModalOpen이 true일 때만 보임) */}
+      {isDetailModalOpen && (
+        <div
+          className="fixed inset-0 bg-black/30 backdrop-blur-sm flex items-center justify-center z-50"
+          onClick={closeDetailModal}
+          style={{
+            backdropFilter: "blur(10px)",
+            WebkitBackdropFilter: "blur(10px)",
+          }}
+        >
+          <div
+            className="bg-white p-8 rounded-2xl w-full max-w-md shadow-2xl"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-start justify-between gap-4 mb-4">
+              <h2 className="text-2xl font-bold text-gray-800">
+                {isDetailLoading ? "불러오는 중..." : (selectedPost?.title ?? "게시글")}
+              </h2>
+              <button
+                type="button"
+                onClick={closeDetailModal}
+                className="px-3 py-1 text-gray-500 hover:text-gray-700 font-medium"
+              >
+                닫기
+              </button>
+            </div>
+
+            {isDetailLoading ? (
+              <div className="text-gray-600">상세 내용을 불러오고 있어요.</div>
+            ) : (
+              <>
+                <div className="text-sm text-gray-400 mb-4">
+                  {selectedPost?.created_at ? new Date(selectedPost.created_at).toLocaleString() : ""}
+                </div>
+                <div className="text-gray-700 whitespace-pre-wrap">
+                  {selectedPost?.content ?? ""}
+                </div>
+              </>
+            )}
           </div>
         </div>
       )}
