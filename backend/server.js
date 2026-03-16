@@ -68,6 +68,25 @@ app.post('/api/posts', async (req, res) => {
     }
 });
 
+// 게시글 상세 조회 API
+app.get('/api/posts/:id', async (req, res) => {
+    try {
+        const { id } = req.params;
+
+        const query = `SELECT * FROM board_posts WHERE id = $1`;
+        const result = await pool.query(query, [id]);
+
+        if (result.rows.length === 0) {
+            return res.status(404).json({ message: "게시글을 찾을 수 없습니다." });
+        }
+
+        res.json(result.rows[0]);
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ message: "게시글 상세 조회 실패", error: err.message });
+    }
+});
+
 
 app.listen(8080, () => {
     console.log("백엔드 서버가 8080번 포트에서 실행 중~~")
